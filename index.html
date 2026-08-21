@@ -208,28 +208,13 @@ body {
 }
 
 /* Upload zone */
-.upload-zone {
-  border: 2px dashed var(--border);
-  border-radius: 5px;
-  padding: 28px 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: var(--surface2);
-  position: relative;
-}
-.upload-zone:hover, .upload-zone.drag-over {
-  border-color: var(--sage);
-  background: var(--sage-lt);
-}
-.upload-zone input[type=file] {
-  position: absolute; inset: 0; opacity: 0; cursor: pointer;
-  width: 100%; height: 100%;
-}
-.upload-icon { font-size: 2rem; margin-bottom: 8px; }
-.upload-label { font-size: 0.88rem; color: var(--text2); font-weight: 500; }
-.upload-hint { font-size: 0.72rem; color: var(--text3); margin-top: 4px; }
-.upload-ok { color: var(--sage); font-weight: 600; font-size: 0.85rem; margin-top: 8px; display: none; }
+/* upload removed */
+
+
+
+
+
+
 
 /* stats */
 .stats-row {
@@ -657,41 +642,27 @@ body {
       </div>
     </div>
 
-    <!-- 匯入題庫 -->
+    <!-- 題庫狀態 -->
     <div class="card">
       <div class="card-head" style="justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <h2>📂 匯入題庫</h2>
+          <h2>📚 題庫狀態</h2>
           <span class="tag">STEP 2</span>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
           <button class="btn btn-primary" id="startBtn" disabled onclick="startExam()">▶ 開始考試</button>
-          <p class="start-hint" id="startHint" style="font-size:0.72rem;color:var(--text3);margin:0;">請先匯入題庫</p>
+          <p class="start-hint" id="startHint" style="font-size:0.72rem;color:var(--text3);margin:0;">題庫載入中...</p>
         </div>
       </div>
       <div class="card-body">
-        <div class="upload-zone" id="uploadZone">
-          <input type="file" id="fileInput" accept=".xlsx,.xls">
-          <div class="upload-icon">📊</div>
-          <div class="upload-label">點擊或拖曳 Excel 題庫檔案（.xlsx / .xls）</div>
-          <div class="upload-hint">每次匯入將取代舊題庫</div>
-          <div class="upload-ok" id="uploadOk"></div>
+        <div id="loadStatus" style="display:flex;align-items:center;gap:12px;padding:16px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
+          <div id="loadIcon" style="font-size:1.8rem;">⏳</div>
+          <div style="flex:1;">
+            <div id="loadText" style="font-weight:600;color:var(--text2);">正在從雲端載入題庫...</div>
+            <div id="loadSub" style="font-size:0.78rem;color:var(--text3);margin-top:2px;">請稍候</div>
+          </div>
+          <button class="btn btn-secondary" style="font-size:0.78rem;padding:6px 12px;" onclick="loadFromSheets()">🔄 重新載入</button>
         </div>
-
-        <p style="font-size:0.76rem;color:var(--text3);margin:14px 0 6px;">Excel 欄位格式（第一列為標題）：</p>
-        <table class="fmt-table">
-          <thead><tr><th>欄位名稱</th><th>說明</th><th>必填</th></tr></thead>
-          <tbody>
-            <tr><td>year</td><td>年度，例：113、114</td><td class="req">必填</td></tr>
-            <tr><td>subject</td><td>科別，例：視覺光學</td><td class="req">必填</td></tr>
-            <tr><td>question</td><td>題目完整文字</td><td class="req">必填</td></tr>
-            <tr><td>optionA ～ optionD</td><td>四個選項文字</td><td class="req">必填</td></tr>
-            <tr><td>answer</td><td>正確答案（A/B/C/D）</td><td class="req">必填</td></tr>
-            <tr><td>explanation</td><td>簡短解析（可空白）</td><td style="color:var(--text3)">選填</td></tr>
-            <tr><td>detail</td><td>詳細解析，顯示答案時一併顯示於答案下方（可貼GPT解說）</td><td style="color:var(--text3)">選填</td></tr>
-            <tr><td>imageUrl</td><td>單張：直接填網址。多張：用「名稱|網址|名稱|網址」格式，例如：圖A|https://...|圖B|https://...</td><td style="color:var(--text3)">選填</td></tr>
-          </tbody>
-        </table>
       </div>
     </div>
 
