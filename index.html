@@ -818,62 +818,30 @@ let curIdx = 0, timerInterval = null, secLeft = 3600, startTime = null, elapsedM
 let currentImgs = []; // [{name, url}]
 
 // ── GOOGLE SHEETS 載入 ──
-const SHEET_ID = "1-18mNvDEDnIT68ltGX-KsVddsR2J4g7qpi3kTE3xpQo";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8McKWY-oNUy7dkDe24C-eGkkb4NKaF6YxPnXsOnaBQWj7NO-im2sCLrlM7Dnwn9EC/exec";
 
 function loadFromSheets() {
   setLoadStatus('⏳', '正在從雲端載入題庫...', '請稍候');
   document.getElementById('startBtn').disabled = true;
 
-  // 移除舊的 script tag
-  const oldScript = document.getElementById('gviz-script');
-  if (oldScript) oldScript.remove();
-
-  // JSONP 方式讀取，完全繞過 CORS
-  window._sheetsCallback = function(json) {
-    try {
-      const table = json.table;
-      const hdrs = table.cols.map(c => (c.label || c.id || '').trim());
-
-      const getCol = (names) => {
-        for (const n of names) {
-          const i = hdrs.indexOf(n);
-          if (i >= 0) return i;
-        }
-        return -1;
-      };
-
-      const col = {
-        year:        getCol(['year','年度']),
-        subject:     getCol(['subject','科別']),
-        question:    getCol(['question','題目']),
-        optionA:     getCol(['optionA','選項A']),
-        optionB:     getCol(['optionB','選項B']),
-        optionC:     getCol(['optionC','選項C']),
-        optionD:     getCol(['optionD','選項D']),
-        answer:      getCol(['answer','正確答案']),
-        explanation: getCol(['explanation','解析']),
-        detail:      getCol(['detail','詳解']),
-        imageUrl:    getCol(['imageUrl','圖片連結']),
-      };
-
-      const getVal = (row, c) => c >= 0 && row.c[c] && row.c[c].v != null
-        ? String(row.c[c].v).trim() : '';
-
+  fetch(APPS_SCRIPT_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (!Array.isArray(data) || data.length === 0) throw new Error('題庫是空的');
       const valid = [];
-      for (const row of table.rows) {
-        if (!row.c) continue;
+      for (const r of data) {
         const q = {
-          year:        getVal(row, col.year),
-          subject:     getVal(row, col.subject),
-          question:    getVal(row, col.question),
-          optionA:     getVal(row, col.optionA),
-          optionB:     getVal(row, col.optionB),
-          optionC:     getVal(row, col.optionC),
-          optionD:     getVal(row, col.optionD),
-          answer:      getVal(row, col.answer).toUpperCase(),
-          explanation: getVal(row, col.explanation),
-          detail:      getVal(row, col.detail),
-          imageUrl:    toDirectImgUrl(getVal(row, col.imageUrl)),
+          year:        String(r.year        || r['年度']   || '').trim(),
+          subject:     String(r.subject     || r['科別']   || '').trim(),
+          question:    String(r.question    || r['題目']   || '').trim(),
+          optionA:     String(r.optionA     || r['選項A']  || '').trim(),
+          optionB:     String(r.optionB     || r['選項B']  || '').trim(),
+          optionC:     String(r.optionC     || r['選項C']  || '').trim(),
+          optionD:     String(r.optionD     || r['選項D']  || '').trim(),
+          answer:      String(r.answer      || r['正確答案']|| '').trim().toUpperCase(),
+          explanation: String(r.explanation || r['解析']   || '').trim(),
+          detail:      String(r.detail      || r['詳解']   || '').trim(),
+          imageUrl:    toDirectImgUrl(String(r.imageUrl || r['圖片連結'] || '').trim()),
         };
         if (q.year && q.subject && q.question &&
             q.optionA && q.optionB && q.optionC && q.optionD &&
@@ -881,7 +849,6 @@ function loadFromSheets() {
           valid.push(q);
         }
       }
-
       if (!valid.length) throw new Error('沒有找到有效題目');
       allQ = valid;
       const imgCount = valid.filter(q => q.imageUrl).length;
@@ -889,19 +856,11 @@ function loadFromSheets() {
         imgCount > 0 ? `其中${imgCount}題含圖片` : '可以開始考試了');
       populateFilters();
       updateStats();
-
-    } catch(err) {
+    })
+    .catch(err => {
       setLoadStatus('❌', '題庫載入失敗', err.message + ' — 請點重新載入');
       document.getElementById('startBtn').disabled = true;
-    }
-  };
-
-  // 動態插入 script tag
-  const script = document.createElement('script');
-  script.id = 'gviz-script';
-  script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&callback=_sheetsCallback&t=${Date.now()}`;
-  script.onerror = () => setLoadStatus('❌', '題庫載入失敗', '網路錯誤 — 請點重新載入');
-  document.head.appendChild(script);
+    });
 }
 
 function setLoadStatus(icon, text, sub) {
