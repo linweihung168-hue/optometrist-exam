@@ -818,15 +818,66 @@ let curIdx = 0, timerInterval = null, secLeft = 3600, startTime = null, elapsedM
 let currentImgs = []; // [{name, url}]
 
 // ── GOOGLE SHEETS 載入 ──
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1W8Y4dwrgcWT2IYdvBOJQJOPskzZblyuH/gviz/tq?tqx=out:csv&sheet=Sheet1";
+const SHEET_ID = "1W8Y4dwrgcWT2IYdvBOJQJOPskzZblyuH";
 
 async function loadFromSheets() {
   setLoadStatus('⏳', '正在從雲端載入題庫...', '請稍候');
   document.getElementById('startBtn').disabled = true;
   try {
-    const res = await fetch(SHEET_CSV_URL + '&t=' + Date.now());
+    // 使用 gviz JSON API（支援 CORS）
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&t=${Date.now()}`;
+    const res = await fetch(url);
     if (!res.ok) throw new Error('網路錯誤');
-    const csv = await res.text();
+    const text = await res.text();
+    // gviz 回傳格式：/*O_o*/\ngoogle.visualization.Query.setResponse({...});
+    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?$/, ''));
+    const table = json.table;
+    const headers = table.cols.map(c => (c.label || c.id || '').trim());
+
+    const getCol = (names) => {
+      for (const n of names) {
+        const i = headers.indexOf(n);
+        if (i >= 0) return i;
+      }
+      return -1;
+    };
+    const col = {
+      year:        getCol(['year','年度']),
+      subject:     getCol(['subject','科別']),
+      question:    getCol(['question','題目']),
+      optionA:     getCol(['optionA','選項A']),
+      optionB:     getCol(['optionB','選項B']),
+      optionC:     getCol(['optionC','選項C']),
+      optionD:     getCol(['optionD','選項D']),
+      answer:      getCol(['answer','正確答案']),
+      explanation: getCol(['explanation','解析']),
+      detail:      getCol(['detail','詳解']),
+      imageUrl:    getCol(['imageUrl','圖片連結']),
+    };
+    const getVal = (row, c) => c >= 0 && row.c[c] && row.c[c].v != null ? String(row.c[c].v).trim() : '';
+
+    const valid = [];
+    for (const row of table.rows) {
+      if (!row.c) continue;
+      const q = {
+        year:        getVal(row, col.year),
+        subject:     getVal(row, col.subject),
+        question:    getVal(row, col.question),
+        optionA:     getVal(row, col.optionA),
+        optionB:     getVal(row, col.optionB),
+        optionC:     getVal(row, col.optionC),
+        optionD:     getVal(row, col.optionD),
+        answer:      getVal(row, col.answer).toUpperCase(),
+        explanation: getVal(row, col.explanation),
+        detail:      getVal(row, col.detail),
+        imageUrl:    toDirectImgUrl(getVal(row, col.imageUrl)),
+      };
+      if (q.year && q.subject && q.question && q.optionA && q.optionB && q.optionC && q.optionD
+          && 'ABCD'.includes(q.answer) && q.answer.length === 1) {
+        valid.push(q);
+      }
+    }
+    const csv = ''; // dummy, not used below
     const rows = parseCSV(csv);
     if (rows.length < 2) throw new Error('題庫是空的');
 
@@ -879,7 +930,7 @@ async function loadFromSheets() {
     if (!valid.length) throw new Error('沒有找到有效題目');
     allQ = valid;
     const imgCount = valid.filter(q => q.imageUrl).length;
-    setLoadStatus('✅', `題庫載入成功！共 ${valid.length} 題`, 
+    setLoadStatus('✅', `題庫載入成功！共 ${valid.length} 題`,
       imgCount > 0 ? `其中 ${imgCount} 題含圖片` : '可以開始考試了');
     populateFilters();
     updateStats();
@@ -894,29 +945,6 @@ function setLoadStatus(icon, text, sub) {
   document.getElementById('loadIcon').textContent = icon;
   document.getElementById('loadText').textContent = text;
   document.getElementById('loadSub').textContent = sub;
-}
-
-// CSV 解析（處理引號內的逗號和換行）
-function parseCSV(text) {
-  const rows = [];
-  let row = [], cell = '', inQ = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (c === '"') {
-      if (inQ && text[i+1] === '"') { cell += '"'; i++; }
-      else inQ = !inQ;
-    } else if (c === ',' && !inQ) {
-      row.push(cell); cell = '';
-    } else if ((c === '\n' || (c === '\r' && text[i+1] === '\n')) && !inQ) {
-      if (c === '\r') i++;
-      row.push(cell); rows.push(row);
-      row = []; cell = '';
-    } else {
-      cell += c;
-    }
-  }
-  if (cell || row.length) { row.push(cell); rows.push(row); }
-  return rows;
 }
 
 // 頁面載入時自動讀取
