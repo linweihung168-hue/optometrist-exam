@@ -121,6 +121,28 @@ body {
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.65} }
 
+.home-fab {
+  position: fixed;
+  bottom: 28px;
+  right: 20px;
+  z-index: 500;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--sage);
+  color: white;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(58,122,191,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.home-fab:hover { background: var(--sage2); transform: scale(1.1); }
+.home-fab:active { transform: scale(0.95); }
+
 .header-meta { font-size: 0.78rem; opacity: 0.8; text-align: right; display: none; line-height: 1.5; }
 
 /* ── LAYOUT ── */
@@ -773,6 +795,9 @@ body {
   </div>
 </div>
 
+<!-- 回首頁浮動按鈕 -->
+<button class="home-fab" id="homeFab" onclick="goHome()" title="回到首頁">🏠</button>
+
 <!-- Confirm End Modal -->
 <div class="modal-overlay" id="endModal">
   <div class="modal-box">
@@ -946,6 +971,7 @@ function startExam() {
   document.getElementById('result-screen').style.display = 'none';
   document.getElementById('timerWrap').style.display = 'flex';
   document.getElementById('headerMeta').style.display = 'block';
+  document.getElementById('homeFab').style.display = 'flex';
 
   document.getElementById('examYear').textContent = yr || '全部';
   document.getElementById('examSubject').textContent = sb || '全部';
@@ -1198,6 +1224,7 @@ function endExam() {
 function showResult() {
   document.getElementById('exam-screen').style.display = 'none';
   document.getElementById('result-screen').style.display = 'block';
+  document.getElementById('homeFab').style.display = 'flex';
   document.getElementById('timerWrap').style.display = 'none';
 
   let correct = 0, wrong = 0, skip = 0;
@@ -1255,6 +1282,21 @@ function showResult() {
 }
 
 function retake() { document.getElementById('result-screen').style.display = 'none'; startExam(); }
+function goHome() {
+  // 如果在考試中，先確認
+  if (document.getElementById('exam-screen').style.display !== 'none') {
+    if (!confirm('確定要離開考試回到首頁嗎？目前進度將不會儲存。')) return;
+    clearInterval(timerInterval);
+  }
+  document.getElementById('exam-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'block';
+  document.getElementById('timerWrap') && (document.getElementById('timerWrap').style.display = 'none');
+  document.getElementById('timerDisplay') && (document.getElementById('timerDisplay').style.display = 'none');
+  document.getElementById('headerMeta') && (document.getElementById('headerMeta').style.display = 'none');
+  document.getElementById('homeFab').style.display = 'none';
+}
+
 function backSetup() {
   document.getElementById('result-screen').style.display = 'none';
   document.getElementById('setup-screen').style.display = 'block';
