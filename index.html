@@ -701,7 +701,7 @@ body {
             <div id="loadText" style="font-weight:600;color:var(--text2);">正在從雲端載入題庫...</div>
             <div id="loadSub" style="font-size:0.78rem;color:var(--text3);margin-top:2px;">請稍候</div>
           </div>
-          <button class="btn btn-secondary" style="font-size:0.78rem;padding:6px 12px;" onclick="loadFromSheets()">🔄 重新載入</button>
+          <button class="btn btn-secondary" style="font-size:0.78rem;padding:6px 12px;" onclick="loadFromSheets(true)">🔄 強制更新</button>
         </div>
       </div>
     </div>
@@ -889,6 +889,12 @@ function processData(data) {
   if (!valid.length) throw new Error('沒有找到有效題目');
   allQ = valid;
   const imgCount = valid.filter(q => q.imageUrl).length;
+  // 存入快取
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+  } catch(e) {}
+
   setLoadStatus('✅', `題庫載入成功！共${valid.length}題`,
     imgCount > 0 ? `其中${imgCount}題含圖片` : '可以開始考試了');
   populateFilters();
@@ -904,15 +910,33 @@ window._cb = function(data) {
   }
 };
 
-function loadFromSheets() {
-  setLoadStatus('⏳', '正在從雲端載入題庫...', '請稍候');
-  document.getElementById('startBtn').disabled = true;
+const CACHE_KEY = 'optom_q_cache';
+const CACHE_TIME_KEY = 'optom_q_cache_time';
+const CACHE_TTL = 60 * 60 * 1000; // 1小時快取
 
-  // 移除舊 script
+function loadFromSheets(forceRefresh = false) {
+  if (!forceRefresh) {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      const cacheTime = parseInt(localStorage.getItem(CACHE_TIME_KEY) || '0');
+      if (cached && Date.now() - cacheTime < CACHE_TTL) {
+        setLoadStatus('⏳', '從快取載入題庫...', '');
+        setTimeout(() => {
+          try { processData(JSON.parse(cached)); }
+          catch(e) { fetchFromServer(); }
+        }, 50);
+        return;
+      }
+    } catch(e) {}
+  }
+  fetchFromServer();
+}
+
+function fetchFromServer() {
+  setLoadStatus('⏳', '正在從雲端載入題庫...', '首次載入需要稍候');
+  document.getElementById('startBtn').disabled = true;
   const old = document.getElementById('as-script');
   if (old) old.remove();
-
-  // JSONP 方式呼叫 Apps Script
   const s = document.createElement('script');
   s.id = 'as-script';
   s.onerror = () => {
