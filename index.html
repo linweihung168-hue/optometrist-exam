@@ -818,7 +818,7 @@ let curIdx = 0, timerInterval = null, secLeft = 3600, startTime = null, elapsedM
 let currentImgs = []; // [{name, url}]
 
 // ── GOOGLE SHEETS 載入 ──
-const SHEET_ID = "1W8Y4dwrgcWT2IYdvBOJQJOPskzZblyuH";
+const SHEET_ID = "1-18mNvDEDnIT68ltGX-KsVddsR2J4g7qpi3kTE3xpQo";
 
 function loadFromSheets() {
   setLoadStatus('⏳', '正在從雲端載入題庫...', '請稍候');
@@ -828,111 +828,68 @@ function loadFromSheets() {
   const oldScript = document.getElementById('gviz-script');
   if (oldScript) oldScript.remove();
 
-  // 用 JSONP 方式讀取（完全繞過 CORS）
+  // JSONP 方式讀取，完全繞過 CORS
   window._sheetsCallback = function(json) {
     try {
-    const table = json.table;
-    const headers = table.cols.map(c => (c.label || c.id || '').trim());
+      const table = json.table;
+      const hdrs = table.cols.map(c => (c.label || c.id || '').trim());
 
-    const getCol = (names) => {
-      for (const n of names) {
-        const i = headers.indexOf(n);
-        if (i >= 0) return i;
-      }
-      return -1;
-    };
-    const col = {
-      year:        getCol(['year','年度']),
-      subject:     getCol(['subject','科別']),
-      question:    getCol(['question','題目']),
-      optionA:     getCol(['optionA','選項A']),
-      optionB:     getCol(['optionB','選項B']),
-      optionC:     getCol(['optionC','選項C']),
-      optionD:     getCol(['optionD','選項D']),
-      answer:      getCol(['answer','正確答案']),
-      explanation: getCol(['explanation','解析']),
-      detail:      getCol(['detail','詳解']),
-      imageUrl:    getCol(['imageUrl','圖片連結']),
-    };
-    const getVal = (row, c) => c >= 0 && row.c[c] && row.c[c].v != null ? String(row.c[c].v).trim() : '';
-
-    const valid = [];
-    for (const row of table.rows) {
-      if (!row.c) continue;
-      const q = {
-        year:        getVal(row, col.year),
-        subject:     getVal(row, col.subject),
-        question:    getVal(row, col.question),
-        optionA:     getVal(row, col.optionA),
-        optionB:     getVal(row, col.optionB),
-        optionC:     getVal(row, col.optionC),
-        optionD:     getVal(row, col.optionD),
-        answer:      getVal(row, col.answer).toUpperCase(),
-        explanation: getVal(row, col.explanation),
-        detail:      getVal(row, col.detail),
-        imageUrl:    toDirectImgUrl(getVal(row, col.imageUrl)),
+      const getCol = (names) => {
+        for (const n of names) {
+          const i = hdrs.indexOf(n);
+          if (i >= 0) return i;
+        }
+        return -1;
       };
-      if (q.year && q.subject && q.question && q.optionA && q.optionB && q.optionC && q.optionD
-          && 'ABCD'.includes(q.answer) && q.answer.length === 1) {
-        valid.push(q);
-      }
-    }
-    const rows = parseCSV(csv);
-    if (rows.length < 2) throw new Error('題庫是空的');
 
-    const headers = rows[0].map(h => h.trim());
-    const getCol = (names) => {
-      for (const n of names) {
-        const i = headers.indexOf(n);
-        if (i >= 0) return i;
-      }
-      return -1;
-    };
-
-    const col = {
-      year:    getCol(['year','年度']),
-      subject: getCol(['subject','科別']),
-      question:getCol(['question','題目']),
-      optionA: getCol(['optionA','選項A']),
-      optionB: getCol(['optionB','選項B']),
-      optionC: getCol(['optionC','選項C']),
-      optionD: getCol(['optionD','選項D']),
-      answer:  getCol(['answer','正確答案']),
-      explanation: getCol(['explanation','解析']),
-      detail:  getCol(['detail','詳解']),
-      imageUrl:getCol(['imageUrl','圖片連結']),
-    };
-
-    const valid = [];
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      const get = (c) => c >= 0 ? (r[c] || '').trim() : '';
-      const q = {
-        year:        get(col.year),
-        subject:     get(col.subject),
-        question:    get(col.question),
-        optionA:     get(col.optionA),
-        optionB:     get(col.optionB),
-        optionC:     get(col.optionC),
-        optionD:     get(col.optionD),
-        answer:      get(col.answer).toUpperCase(),
-        explanation: get(col.explanation),
-        detail:      get(col.detail),
-        imageUrl:    toDirectImgUrl(get(col.imageUrl)),
+      const col = {
+        year:        getCol(['year','年度']),
+        subject:     getCol(['subject','科別']),
+        question:    getCol(['question','題目']),
+        optionA:     getCol(['optionA','選項A']),
+        optionB:     getCol(['optionB','選項B']),
+        optionC:     getCol(['optionC','選項C']),
+        optionD:     getCol(['optionD','選項D']),
+        answer:      getCol(['answer','正確答案']),
+        explanation: getCol(['explanation','解析']),
+        detail:      getCol(['detail','詳解']),
+        imageUrl:    getCol(['imageUrl','圖片連結']),
       };
-      if (q.year && q.subject && q.question && q.optionA && q.optionB && q.optionC && q.optionD
-          && 'ABCD'.includes(q.answer) && q.answer.length === 1) {
-        valid.push(q);
-      }
-    }
 
-    if (!valid.length) throw new Error('沒有找到有效題目');
-    allQ = valid;
-    const imgCount = valid.filter(q => q.imageUrl).length;
-    setLoadStatus('✅', `題庫載入成功！共${valid.length}題`,
-      imgCount > 0 ? `其中${imgCount}題含圖片` : '可以開始考試了');
-    populateFilters();
-    updateStats();
+      const getVal = (row, c) => c >= 0 && row.c[c] && row.c[c].v != null
+        ? String(row.c[c].v).trim() : '';
+
+      const valid = [];
+      for (const row of table.rows) {
+        if (!row.c) continue;
+        const q = {
+          year:        getVal(row, col.year),
+          subject:     getVal(row, col.subject),
+          question:    getVal(row, col.question),
+          optionA:     getVal(row, col.optionA),
+          optionB:     getVal(row, col.optionB),
+          optionC:     getVal(row, col.optionC),
+          optionD:     getVal(row, col.optionD),
+          answer:      getVal(row, col.answer).toUpperCase(),
+          explanation: getVal(row, col.explanation),
+          detail:      getVal(row, col.detail),
+          imageUrl:    toDirectImgUrl(getVal(row, col.imageUrl)),
+        };
+        if (q.year && q.subject && q.question &&
+            q.optionA && q.optionB && q.optionC && q.optionD &&
+            'ABCD'.includes(q.answer) && q.answer.length === 1) {
+          valid.push(q);
+        }
+      }
+
+      if (!valid.length) throw new Error('沒有找到有效題目');
+      allQ = valid;
+      const imgCount = valid.filter(q => q.imageUrl).length;
+      setLoadStatus('✅', `題庫載入成功！共${valid.length}題`,
+        imgCount > 0 ? `其中${imgCount}題含圖片` : '可以開始考試了');
+      populateFilters();
+      updateStats();
+
     } catch(err) {
       setLoadStatus('❌', '題庫載入失敗', err.message + ' — 請點重新載入');
       document.getElementById('startBtn').disabled = true;
@@ -942,7 +899,7 @@ function loadFromSheets() {
   // 動態插入 script tag
   const script = document.createElement('script');
   script.id = 'gviz-script';
-  script.src = `https://docs.google.com/spreadsheets/d/1W8Y4dwrgcWT2IYdvBOJQJOPskzZblyuH/gviz/tq?tqx=out:json&callback=_sheetsCallback&t=${Date.now()}`;
+  script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&callback=_sheetsCallback&t=${Date.now()}`;
   script.onerror = () => setLoadStatus('❌', '題庫載入失敗', '網路錯誤 — 請點重新載入');
   document.head.appendChild(script);
 }
