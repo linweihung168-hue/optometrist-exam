@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="驗光師考試">
+<meta name="theme-color" content="#3a7abf">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>驗光師考試模擬系統</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:        #f0f4f8;
+  --bg2:       #e6edf5;
+  --surface:   #f8fafc;
+  --surface2:  #edf2f8;
+  --border:    #c8d8e8;
+  --border2:   #dce8f2;
+  --text:      #1e2e3e;
+  --text2:     #3a5068;
+  --text3:     #7a96ae;
+  --sage:      #3a7abf;
+  --sage2:     #5a96d8;
+  --sage-lt:   #e6f0fa;
+  --dusty:     #4a6e8a;
+  --dusty2:    #6a8eaa;
+  --dusty-lt:  #eaf2f8;
+  --warm:      #5a7eb8;
+  --warm2:     #7a9ed0;
+  --warm-lt:   #eaf0fa;
+  --sky:       #2e6aaa;
+  --sky2:      #4e8aca;
+  --sky-lt:    #e4eef8;
+  --gold:      #7a8eba;
+  --gold-lt:   #eaeefc;
+  --shadow:    0 2px 12px rgba(60,100,140,0.08);
+  --shadow2:   0 6px 24px rgba(60,100,140,0.13);
+  --r:         6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── HEADER ── */
+.site-header {
+  background: var(--sage);
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(46,106,170,0.3);
+  gap: 16px;
+}
+.header-title {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.header-title small {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 300;
+  font-size: 0.75rem;
+  opacity: 0.75;
+  margin-left: 8px;
+  letter-spacing: 0.04em;
+}
+.timer-wrap {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.timer-display {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: var(--r);
+  padding: 6px 18px;
+  font-family: 'Courier New', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  min-width: 110px;
+  text-align: center;
+  transition: background 0.3s;
+  cursor: pointer;
+  user-select: none;
+}
+.timer-display:hover { background: rgba(255,255,255,0.3); }
+.timer-display.paused {
+  opacity: 0.65;
+  background: rgba(255,255,255,0.1);
+}
+.timer-display.urgent {
+  background: rgba(180,60,60,0.45);
+  border-color: rgba(255,150,150,0.5);
+  animation: blink 1s infinite;
+}
+.timer-hint {
+  font-size: 0.6rem;
+  opacity: 0.65;
+  color: white;
+  letter-spacing: 0.04em;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.65} }
+
+.header-meta { font-size: 0.78rem; opacity: 0.8; text-align: right; display: none; line-height: 1.5; }
+
+/* ── LAYOUT ── */
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 56px;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.card-head {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 11px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-head h2 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 0.04em;
+}
+.tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--sage);
+  color: white;
+}
+.card-body { padding: 18px; }
+
+/* ── SETUP ── */
+#setup-screen { display: block; }
+
+/* Settings row at top */
+.settings-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 5px;
+}
+.form-group select,
+.form-group input[type=number] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.88rem;
+  font-family: 'Noto Sans TC', sans-serif;
+  background: white;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%239c9080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+}
+.form-group input[type=number] { background-image: none; }
+.form-group select:focus,
+.form-group input[type=number]:focus {
+  border-color: var(--sage);
+  box-shadow: 0 0 0 3px rgba(90,122,98,0.12);
+}
+
+/* Upload zone */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 5px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface2);
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--sage);
+  background: var(--sage-lt);
+}
+.upload-zone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  width: 100%; height: 100%;
+}
+.upload-icon { font-size: 2rem; margin-bottom: 8px; }
+.upload-label { font-size: 0.88rem; color: var(--text2); font-weight: 500; }
+.upload-hint { font-size: 0.72rem; color: var(--text3); margin-top: 4px; }
+.upload-ok { color: var(--sage); font-weight: 600; font-size: 0.85rem; margin-top: 8px; display: none; }
+
+/* stats */
+.stats-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--sage-lt);
+  border: 1px solid #c8deca;
+  border-radius: 5px;
+  margin-top: 14px;
+}
+.stat { flex: 1; min-width: 90px; text-align: center; }
+.stat-val { font-size: 1.5rem; font-weight: 700; color: var(--sage); font-family: 'Noto Serif TC', serif; }
+.stat-lbl { font-size: 0.68rem; color: var(--text3); margin-top: 1px; }
+
+/* format table */
+.fmt-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-top: 10px; }
+.fmt-table th { background: var(--dusty); color: white; padding: 6px 10px; text-align: left; font-weight: 600; }
+.fmt-table td { padding: 5px 10px; border-bottom: 1px solid var(--border2); color: var(--text2); }
+.fmt-table tr:nth-child(even) td { background: var(--surface2); }
+.req { color: var(--warm); font-weight: 700; }
+
+/* start area */
+.start-area { text-align: center; padding: 10px 0 4px; }
+.start-hint { font-size: 0.8rem; color: var(--text3); margin-top: 8px; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border: none; border-radius: 4px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 0.86rem; font-weight: 600; cursor: pointer;
+  transition: all 0.16s; letter-spacing: 0.02em;
+}
+.btn-primary { background: var(--sage); color: white; box-shadow: 0 2px 8px rgba(58,122,191,0.25); }
+.btn-primary:hover { background: var(--sage2); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border2); }
+.btn-warm { background: var(--warm); color: white; box-shadow: 0 2px 8px rgba(138,104,72,0.25); }
+.btn-warm:hover { background: var(--warm2); }
+.btn-sky { background: var(--sky); color: white; box-shadow: 0 2px 8px rgba(74,110,138,0.25); }
+.btn-sky:hover { background: var(--sky2); }
+.btn-lg { padding: 12px 28px; font-size: 0.96rem; }
+
+/* image button */
+.btn-img {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 4px;
+  background: var(--sky-lt); color: var(--sky);
+  border: 1px solid #b8cfdf;
+  font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: all 0.16s;
+  font-family: 'Noto Sans TC', sans-serif;
+  white-space: nowrap;
+}
+.btn-img:hover { background: var(--sky); color: white; }
+
+/* ── EXAM SCREEN ── */
+#exam-screen { display: none; }
+
+.exam-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.exam-info { font-size: 0.78rem; color: var(--text2); line-height: 1.6; }
+.exam-info strong { color: var(--text); }
+.prog-wrap { flex: 1; min-width: 180px; }
+.prog-lbl { font-size: 0.7rem; color: var(--text3); margin-bottom: 3px; }
+.prog-track { height: 5px; background: var(--border2); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--sage), var(--sage2)); border-radius: 99px; transition: width 0.4s; width: 0%; }
+
+/* nav grid */
+.nav-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+.nav-btn {
+  width: 30px; height: 30px; border-radius: 4px;
+  border: 1px solid var(--border); background: white;
+  font-size: 0.7rem; font-weight: 600; cursor: pointer;
+  transition: all 0.14s; color: var(--text3);
+}
+.nav-btn:hover { border-color: #4a90c8; color: #4a90c8; }
+.nav-btn.answered { background: #52a882; border-color: #52a882; color: white; }
+.nav-btn.current  { background: #2e6aaa; border-color: #2e6aaa; color: white; box-shadow: 0 0 0 2px #a8c8f0; }
+.nav-btn.marked   { background: #e08830; border-color: #e08830; color: white; }
+
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.7rem; color: var(--text3); margin-bottom: 8px; }
+.leg { display: flex; align-items: center; gap: 4px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+/* question card */
+.q-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; }
+.q-head {
+  background: linear-gradient(135deg, var(--sky) 0%, var(--sky2) 100%);
+  color: white; padding: 13px 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.q-num { font-family: 'Noto Serif TC', serif; font-size: 1rem; font-weight: 700; }
+.q-score { font-size: 0.74rem; opacity: 0.8; background: rgba(255,255,255,0.18); padding: 2px 8px; border-radius: 3px; }
+.q-ans-btn {
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: white; font-size: 0.72rem; padding: 4px 10px; border-radius: 3px;
+  cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans TC', sans-serif;
+  white-space: nowrap;
+}
+.q-ans-btn:hover { background: rgba(255,255,255,0.3); }
+.q-ans-btn.showing {
+  background: #f0c040;
+  border-color: #d4a820;
+  color: #2c2000;
+  font-weight: 700;
+}
+.q-ans-box {
+  margin: 4px 0 14px;
+  background: #fffbe6;
+  border: 1.5px solid #f0d060;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.q-ans-answer {
+  padding: 10px 16px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #5a4000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.q-ans-detail {
+  padding: 10px 16px 12px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #3a3000;
+  border-top: 1px solid #f0d060;
+  background: #fffdf0;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.q-ans-detail-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #9a7a00;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.q-ans-box .ans-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  background: #f0c040;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2c2000;
+  flex-shrink: 0;
+}
+.q-mark-btn {
+  margin-left: auto; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
+  color: white; font-size: 0.72rem; padding: 4px 10px; border-radius: 3px;
+  cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans TC', sans-serif;
+}
+.q-mark-btn:hover { background: rgba(255,255,255,0.3); }
+.q-mark-btn.marked { background: var(--gold); border-color: var(--gold); }
+
+.q-body { padding: 22px 18px 16px; }
+.q-text { font-size: 0.97rem; line-height: 1.8; color: var(--text); margin-bottom: 6px; font-weight: 500; }
+.q-img-row { margin-bottom: 16px; }
+.options { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-top: 16px; }
+.opt-item {
+  border: 1.5px solid var(--border); border-radius: 5px;
+  transition: all 0.14s; cursor: pointer; overflow: hidden;
+}
+.opt-item:hover { border-color: var(--sky); background: var(--sky-lt); }
+.opt-item.selected { border-color: var(--sky); background: var(--sky-lt); }
+.opt-lbl { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; cursor: pointer; width: 100%; }
+.opt-lbl input[type=radio] { display: none; }
+.opt-circle {
+  width: 24px; height: 24px; min-width: 24px; border-radius: 50%;
+  border: 2px solid var(--border); display: flex; align-items: center;
+  justify-content: center; font-size: 0.72rem; font-weight: 700;
+  transition: all 0.14s; color: var(--text3);
+}
+.opt-item.selected .opt-circle { background: var(--sky); border-color: var(--sky); color: white; }
+.opt-text { font-size: 0.9rem; line-height: 1.6; padding-top: 1px; }
+
+.q-actions {
+  padding: 13px 18px; border-top: 1px solid var(--border2);
+  background: var(--surface2); display: flex; gap: 9px; align-items: center; flex-wrap: wrap;
+}
+
+/* ── IMAGE MODAL ── */
+.img-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.72);
+  display: none; align-items: center; justify-content: center;
+  z-index: 9999; padding: 20px;
+}
+.img-modal.show { display: flex; }
+.img-modal-box {
+  background: white; border-radius: 8px; max-width: 90vw; max-height: 90vh;
+  overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  display: flex; flex-direction: column;
+}
+.img-modal-header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.85rem; font-weight: 600; color: var(--text2);
+  position: sticky; top: 0; background: white;
+}
+.img-modal-close {
+  background: none; border: none; font-size: 1.3rem; cursor: pointer;
+  color: var(--text3); line-height: 1; padding: 2px 6px;
+  border-radius: 3px; transition: all 0.14s;
+}
+.img-modal-close:hover { background: var(--surface2); color: var(--text); }
+.img-modal-img { display: block; max-width: 100%; height: auto; padding: 16px; }
+.img-tab {
+  padding: 5px 12px; border-radius: 4px 4px 0 0;
+  border: 1px solid var(--border); border-bottom: none;
+  background: white; color: var(--text2);
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif;
+  transition: all 0.14s;
+}
+.img-tab:hover { background: var(--sky-lt); color: var(--sky); }
+.img-tab.active { background: var(--sky); color: white; border-color: var(--sky); }
+
+/* ── RESULT SCREEN ── */
+#result-screen { display: none; }
+
+.result-hero {
+  background: linear-gradient(135deg, #3a7abf 0%, #2e5e9a 100%);
+  color: white; padding: 36px 28px; text-align: center;
+  border-radius: var(--r); margin-bottom: 18px;
+  box-shadow: var(--shadow2);
+}
+.result-ttl { font-size: 0.88rem; opacity: 0.8; letter-spacing: 0.1em; margin-bottom: 10px; font-family: 'Noto Serif TC', serif; }
+.result-score { font-family: 'Noto Serif TC', serif; font-size: 3.8rem; font-weight: 700; line-height: 1; }
+.result-score span { font-size: 1.4rem; opacity: 0.85; }
+.result-pass { margin-top: 10px; font-size: 1rem; font-weight: 700; letter-spacing: 0.06em; }
+.result-pass.pass { color: #afffcc; }
+.result-pass.fail { color: #ffc8c8; }
+
+.result-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.result-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; text-align: center; }
+.rs-val { font-size: 1.7rem; font-weight: 700; font-family: 'Noto Serif TC', serif; }
+.rs-val.g { color: var(--sage); }
+.rs-val.r { color: #b05050; }
+.rs-val.b { color: var(--sky); }
+.rs-val.gold { color: var(--gold); }
+.rs-lbl { font-size: 0.72rem; color: var(--text3); margin-top: 3px; }
+
+.review-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.review-table th { background: var(--text); color: white; padding: 8px 12px; text-align: left; font-weight: 600; font-size: 0.75rem; }
+.review-table td { padding: 8px 12px; border-bottom: 1px solid var(--border2); vertical-align: top; line-height: 1.5; }
+.review-table tr:nth-child(even) td { background: var(--surface2); }
+.review-table tr:hover td { background: var(--sage-lt); }
+.badge { padding: 2px 8px; border-radius: 3px; font-size: 0.68rem; font-weight: 700; }
+.badge.ok { background: var(--sage); color: white; }
+.badge.ng { background: #b05050; color: white; }
+.badge.sk { background: var(--text3); color: white; }
+
+.result-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 18px; }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 9000; }
+.modal-overlay.show { display: flex; }
+.modal-box { background: white; border-radius: 8px; padding: 28px; max-width: 380px; width: 90%; text-align: center; box-shadow: var(--shadow2); }
+.modal-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.modal-title { font-family: 'Noto Serif TC', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.modal-body { font-size: 0.85rem; color: var(--text2); margin-bottom: 22px; line-height: 1.6; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+/* ── HISTORY ── */
+.hist-filter-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;
+}
+.hist-filter-row select {
+  padding: 6px 28px 6px 10px; border: 1px solid var(--border); border-radius: 4px;
+  font-size: 0.8rem; font-family: 'Noto Sans TC', sans-serif;
+  background: white; color: var(--text); outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%239c9080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  transition: border-color 0.18s;
+}
+.hist-filter-row select:focus { border-color: var(--sage); }
+.hist-count { font-size: 0.76rem; color: var(--text3); margin-left: auto; }
+
+.hist-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.hist-table th {
+  background: var(--surface2); color: var(--text2);
+  padding: 8px 12px; text-align: left; font-weight: 600;
+  font-size: 0.72rem; border-bottom: 2px solid var(--border);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.hist-table th:hover { color: var(--sage); }
+.hist-table th .sort-ico { opacity: 0.4; margin-left: 3px; font-size: 0.65rem; }
+.hist-table th.asc .sort-ico::after  { content: ' ▲'; opacity: 1; }
+.hist-table th.desc .sort-ico::after { content: ' ▼'; opacity: 1; }
+.hist-table td { padding: 8px 12px; border-bottom: 1px solid var(--border2); vertical-align: middle; }
+.hist-table tr:hover td { background: var(--sage-lt); }
+.hist-pass  { color: var(--sage); font-weight: 700; }
+.hist-fail  { color: #b05050; font-weight: 700; }
+
+.hist-score-bar {
+  display: flex; align-items: center; gap: 6px;
+}
+.hist-score-track {
+  flex: 1; height: 5px; background: var(--border2);
+  border-radius: 99px; overflow: hidden; min-width: 60px;
+}
+.hist-score-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--sage), var(--sage2));
+  transition: width 0.4s;
+}
+.hist-score-fill.fail { background: linear-gradient(90deg, #c07070, #e09090); }
+.hist-score-num { font-weight: 700; min-width: 38px; text-align: right; font-size: 0.82rem; }
+
+.hist-empty {
+  text-align: center; padding: 28px; color: var(--text3);
+  font-size: 0.85rem; line-height: 2;
+}
+
+/* summary mini cards */
+.hist-summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px; margin-bottom: 14px;
+}
+.hist-sum-card {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 5px; padding: 10px 12px; text-align: center;
+}
+.hist-sum-val { font-size: 1.3rem; font-weight: 700; font-family: 'Noto Serif TC', serif; color: var(--sage); }
+.hist-sum-lbl { font-size: 0.68rem; color: var(--text3); margin-top: 2px; }
+
+@media (max-width: 600px) {
+  .main { padding: 12px 10px 36px; }
+  .header-title small { display: none; }
+  .result-score { font-size: 3rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-title">
+    驗光師考試模擬系統
+    <small>OPTOMETRY EXAM SIMULATOR</small>
+  </div>
+  <div class="timer-wrap" id="timerWrap">
+    <div class="timer-display" id="timerDisplay" onclick="toggleTimer()" title="點擊開始／暫停計時">▶ 開始計時</div>
+    <div class="timer-hint" id="timerHint">點擊開始計時</div>
+  </div>
+  <div class="header-meta" id="headerMeta"></div>
+</header>
+
+<div class="main">
+
+  <!-- ════════════ SETUP ════════════ -->
+  <div id="setup-screen">
+
+    <!-- 考試設定（最上方） -->
+    <div class="card">
+      <div class="card-head">
+        <h2>⚙️ 考試設定</h2>
+        <span class="tag">STEP 1</span>
+      </div>
+      <div class="card-body">
+        <div class="settings-row">
+          <div class="form-group">
+            <label>年度</label>
+            <select id="yearSelect"><option value="">── 全部年度 ──</option></select>
+          </div>
+          <div class="form-group">
+            <label>科別</label>
+            <select id="subjectSelect"><option value="">── 全部科別 ──</option></select>
+          </div>
+          <div class="form-group">
+            <label>考試題數</label>
+            <input type="number" id="questionCount" value="50" min="1" max="200">
+          </div>
+          <div class="form-group">
+            <label>時間（分鐘）</label>
+            <input type="number" id="examMinutes" value="60" min="5" max="180">
+          </div>
+          <div class="form-group">
+            <label>出題順序</label>
+            <select id="orderSelect">
+              <option value="sequential">🔢 按題號順序</option>
+              <option value="random">🔀 隨機出題</option>
+            </select>
+          </div>
+        </div>
+        <div class="stats-row" id="statsRow" style="display:none;">
+          <div class="stat"><div class="stat-val" id="stTotal">0</div><div class="stat-lbl">題庫總題數</div></div>
+          <div class="stat"><div class="stat-val" id="stFiltered">0</div><div class="stat-lbl">符合條件</div></div>
+          <div class="stat"><div class="stat-val" id="stYears">0</div><div class="stat-lbl">年度數</div></div>
+          <div class="stat"><div class="stat-val" id="stSubjects">0</div><div class="stat-lbl">科別數</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 歷史成績 -->
+    <div class="card" id="histCard">
+      <div class="card-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <h2>📊 歷史成績紀錄</h2>
+        </div>
+        <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.76rem;" onclick="clearHistory()">🗑 清除紀錄</button>
+      </div>
+      <div class="card-body" id="histBody">
+        <div class="hist-empty">尚無考試紀錄<br>完成第一次考試後將自動儲存於此</div>
+      </div>
+    </div>
+
+    <!-- 匯入題庫 -->
+    <div class="card">
+      <div class="card-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <h2>📂 匯入題庫</h2>
+          <span class="tag">STEP 2</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <button class="btn btn-primary" id="startBtn" disabled onclick="startExam()">▶ 開始考試</button>
+          <p class="start-hint" id="startHint" style="font-size:0.72rem;color:var(--text3);margin:0;">請先匯入題庫</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept=".xlsx,.xls">
+          <div class="upload-icon">📊</div>
+          <div class="upload-label">點擊或拖曳 Excel 題庫檔案（.xlsx / .xls）</div>
+          <div class="upload-hint">每次匯入將取代舊題庫</div>
+          <div class="upload-ok" id="uploadOk"></div>
+        </div>
+
+        <p style="font-size:0.76rem;color:var(--text3);margin:14px 0 6px;">Excel 欄位格式（第一列為標題）：</p>
+        <table class="fmt-table">
+          <thead><tr><th>欄位名稱</th><th>說明</th><th>必填</th></tr></thead>
+          <tbody>
+            <tr><td>year</td><td>年度，例：113、114</td><td class="req">必填</td></tr>
+            <tr><td>subject</td><td>科別，例：視覺光學</td><td class="req">必填</td></tr>
+            <tr><td>question</td><td>題目完整文字</td><td class="req">必填</td></tr>
+            <tr><td>optionA ～ optionD</td><td>四個選項文字</td><td class="req">必填</td></tr>
+            <tr><td>answer</td><td>正確答案（A/B/C/D）</td><td class="req">必填</td></tr>
+            <tr><td>explanation</td><td>簡短解析（可空白）</td><td style="color:var(--text3)">選填</td></tr>
+            <tr><td>detail</td><td>詳細解析，顯示答案時一併顯示於答案下方（可貼GPT解說）</td><td style="color:var(--text3)">選填</td></tr>
+            <tr><td>imageUrl</td><td>單張：直接填網址。多張：用「名稱|網址|名稱|網址」格式，例如：圖A|https://...|圖B|https://...</td><td style="color:var(--text3)">選填</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+
+  </div><!-- /setup -->
+
+  <!-- ════════════ EXAM ════════════ -->
+  <div id="exam-screen">
+
+    <div class="exam-bar">
+      <div class="exam-info">
+        年度：<strong id="examYear">-</strong> ／ 科別：<strong id="examSubject">-</strong><br>
+        共 <strong id="examTotal">-</strong> 題
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-lbl" id="progLbl">已作答 0 題</div>
+        <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+      </div>
+      <button class="btn btn-secondary" onclick="confirmEnd()">結束考試</button>
+    </div>
+
+    <!-- 導覽格 -->
+    <div class="card">
+      <div class="card-body" style="padding:12px 14px;">
+        <div class="legend">
+          <div class="leg"><div class="leg-dot" style="background:white;border:1px solid #c0c8d4;"></div>未作答</div>
+          <div class="leg"><div class="leg-dot" style="background:#52a882;"></div>已作答</div>
+          <div class="leg"><div class="leg-dot" style="background:#e08830;"></div>已標記</div>
+          <div class="leg"><div class="leg-dot" style="background:#2e6aaa;box-shadow:0 0 0 2px #a8c8f0;"></div>目前題</div>
+        </div>
+        <div class="nav-grid" id="navGrid"></div>
+      </div>
+    </div>
+
+    <!-- 題目 -->
+    <div class="q-card">
+      <div class="q-head">
+        <span class="q-num" id="qNum">第 1 題</span>
+        <span class="q-score" id="qScore">2 分</span>
+        <button class="q-ans-btn" id="ansBtn" onclick="toggleAnswer()">💡 顯示答案</button>
+        <button class="q-mark-btn" id="markBtn" onclick="toggleMark()">☆ 標記</button>
+      </div>
+      <div class="q-body">
+        <div class="q-text" id="qText"></div>
+        <div class="q-ans-box" id="ansBox" style="display:none;"></div>
+        <div class="q-img-row" id="qImgRow" style="display:none;">
+          <!-- 動態產生圖片按鈕 -->
+        </div>
+        <ul class="options" id="optsList"></ul>
+      </div>
+      <div class="q-actions">
+        <button class="btn btn-secondary" id="prevBtn" onclick="prevQ()">◀ 上一題</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="nextQ()">下一題 ▶</button>
+        <button class="btn btn-warm" style="margin-left:auto;" onclick="confirmEnd()">✓ 交卷</button>
+      </div>
+    </div>
+
+  </div><!-- /exam -->
+
+  <!-- ════════════ RESULT ════════════ -->
+  <div id="result-screen">
+
+    <div class="result-hero">
+      <div class="result-ttl">考試結果 EXAM RESULT</div>
+      <div class="result-score" id="rScore">—<span>分</span></div>
+      <div class="result-pass" id="rPass"></div>
+    </div>
+
+    <div class="result-stats">
+      <div class="result-stat"><div class="rs-val g" id="rCorrect">-</div><div class="rs-lbl">答對題數</div></div>
+      <div class="result-stat"><div class="rs-val r" id="rWrong">-</div><div class="rs-lbl">答錯題數</div></div>
+      <div class="result-stat"><div class="rs-val b" id="rSkip">-</div><div class="rs-lbl">未作答</div></div>
+      <div class="result-stat"><div class="rs-val gold" id="rTime">-</div><div class="rs-lbl">作答用時</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>📋 答題回顧</h2></div>
+      <div style="overflow:auto;">
+        <table class="review-table">
+          <thead>
+            <tr><th>#</th><th>題目</th><th>你的答案</th><th>正確答案</th><th>結果</th><th>解析</th></tr>
+          </thead>
+          <tbody id="reviewBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-primary btn-lg" onclick="retake()">🔄 重新考試</button>
+      <button class="btn btn-secondary btn-lg" onclick="backSetup()">⚙️ 返回設定</button>
+    </div>
+
+  </div><!-- /result -->
+
+</div><!-- /main -->
+
+<!-- Image Modal -->
+<div class="img-modal" id="imgModal">
+  <div class="img-modal-box">
+    <div class="img-modal-header">
+      <span id="modalTitle">題目圖片</span>
+      <button class="img-modal-close" onclick="closeImg()">✕</button>
+    </div>
+    <!-- 多圖切換列 -->
+    <div id="modalTabs" style="display:none;padding:8px 16px 0;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border2);background:var(--surface2);"></div>
+    <img class="img-modal-img" id="modalImg" src="" alt="題目圖片">
+  </div>
+</div>
+
+<!-- Confirm End Modal -->
+<div class="modal-overlay" id="endModal">
+  <div class="modal-box">
+    <div class="modal-icon">📝</div>
+    <div class="modal-title">確認交卷</div>
+    <div class="modal-body" id="endModalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEndModal()">繼續作答</button>
+      <button class="btn btn-warm" onclick="endExam()">確認交卷</button>
+    </div>
+  </div>
+</div>
+
+<!-- Time Up Modal -->
+<div class="modal-overlay" id="timeUpModal">
+  <div class="modal-box">
+    <div class="modal-icon">⏰</div>
+    <div class="modal-title">時間到！</div>
+    <div class="modal-body">考試時間已結束，系統將自動結算成績。</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="endExam()">查看成績</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── GOOGLE DRIVE URL 自動轉換 ──
+function toDirectImgUrl(url) {
+  if (!url) return '';
+  // 格式1: /file/d/ID/view
+  let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return `https://lh3.googleusercontent.com/d/${m[1]}`;
+  // 格式2: id=ID
+  m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m) return `https://lh3.googleusercontent.com/d/${m[1]}`;
+  // 其他網址原樣回傳（imgur 等）
+  return url;
+}
+
+// ── STATE ──
+let allQ = [], examQ = [], answers = [], marked = [], showAns = false;
+let curIdx = 0, timerInterval = null, secLeft = 3600, startTime = null, elapsedMs = 0, lastResumeTime = null;
+let currentImgs = []; // [{name, url}]
+
+// ── GOOGLE SHEETS 載入 ──
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1W8Y4dwrgcWT2IYdvBOJQJOPskzZblyuH/gviz/tq?tqx=out:csv&sheet=Sheet1";
+
+async function loadFromSheets() {
+  setLoadStatus('⏳', '正在從雲端載入題庫...', '請稍候');
+  document.getElementById('startBtn').disabled = true;
+  try {
+    const res = await fetch(SHEET_CSV_URL + '&t=' + Date.now());
+    if (!res.ok) throw new Error('網路錯誤');
+    const csv = await res.text();
+    const rows = parseCSV(csv);
+    if (rows.length < 2) throw new Error('題庫是空的');
+
+    const headers = rows[0].map(h => h.trim());
+    const getCol = (names) => {
+      for (const n of names) {
+        const i = headers.indexOf(n);
+        if (i >= 0) return i;
+      }
+      return -1;
+    };
+
+    const col = {
+      year:    getCol(['year','年度']),
+      subject: getCol(['subject','科別']),
+      question:getCol(['question','題目']),
+      optionA: getCol(['optionA','選項A']),
+      optionB: getCol(['optionB','選項B']),
+      optionC: getCol(['optionC','選項C']),
+      optionD: getCol(['optionD','選項D']),
+      answer:  getCol(['answer','正確答案']),
+      explanation: getCol(['explanation','解析']),
+      detail:  getCol(['detail','詳解']),
+      imageUrl:getCol(['imageUrl','圖片連結']),
+    };
+
+    const valid = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      const get = (c) => c >= 0 ? (r[c] || '').trim() : '';
+      const q = {
+        year:        get(col.year),
+        subject:     get(col.subject),
+        question:    get(col.question),
+        optionA:     get(col.optionA),
+        optionB:     get(col.optionB),
+        optionC:     get(col.optionC),
+        optionD:     get(col.optionD),
+        answer:      get(col.answer).toUpperCase(),
+        explanation: get(col.explanation),
+        detail:      get(col.detail),
+        imageUrl:    toDirectImgUrl(get(col.imageUrl)),
+      };
+      if (q.year && q.subject && q.question && q.optionA && q.optionB && q.optionC && q.optionD
+          && 'ABCD'.includes(q.answer) && q.answer.length === 1) {
+        valid.push(q);
+      }
+    }
+
+    if (!valid.length) throw new Error('沒有找到有效題目');
+    allQ = valid;
+    const imgCount = valid.filter(q => q.imageUrl).length;
+    setLoadStatus('✅', `題庫載入成功！共 ${valid.length} 題`, 
+      imgCount > 0 ? `其中 ${imgCount} 題含圖片` : '可以開始考試了');
+    populateFilters();
+    updateStats();
+
+  } catch(err) {
+    setLoadStatus('❌', '題庫載入失敗', `${err.message} — 請點右側重新載入`);
+    document.getElementById('startBtn').disabled = true;
+  }
+}
+
+function setLoadStatus(icon, text, sub) {
+  document.getElementById('loadIcon').textContent = icon;
+  document.getElementById('loadText').textContent = text;
+  document.getElementById('loadSub').textContent = sub;
+}
+
+// CSV 解析（處理引號內的逗號和換行）
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (inQ && text[i+1] === '"') { cell += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      row.push(cell); cell = '';
+    } else if ((c === '\n' || (c === '\r' && text[i+1] === '\n')) && !inQ) {
+      if (c === '\r') i++;
+      row.push(cell); rows.push(row);
+      row = []; cell = '';
+    } else {
+      cell += c;
+    }
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+// 頁面載入時自動讀取
+window.addEventListener('load', loadFromSheets);
+
+function populateFilters() {
+  const years = [...new Set(allQ.map(q => q.year))].sort();
+  const subjects = [...new Set(allQ.map(q => q.subject))].sort();
+  const ySel = document.getElementById('yearSelect');
+  const sSel = document.getElementById('subjectSelect');
+  ySel.innerHTML = '<option value="">── 全部年度 ──</option>' + years.map(y => `<option>${y}</option>`).join('');
+  sSel.innerHTML = '<option value="">── 全部科別 ──</option>' + subjects.map(s => `<option>${s}</option>`).join('');
+  document.getElementById('statsRow').style.display = 'flex';
+  document.getElementById('stYears').textContent = years.length;
+  document.getElementById('stSubjects').textContent = subjects.length;
+  ySel.onchange = sSel.onchange = updateStats;
+}
+
+function updateStats() {
+  if (!allQ.length) return;
+  const yr = document.getElementById('yearSelect').value;
+  const sb = document.getElementById('subjectSelect').value;
+  const pool = allQ.filter(q => (!yr || q.year === yr) && (!sb || q.subject === sb));
+  document.getElementById('stTotal').textContent = allQ.length;
+  document.getElementById('stFiltered').textContent = pool.length;
+  const cnt = parseInt(document.getElementById('questionCount').value) || 50;
+  const btn = document.getElementById('startBtn');
+  const hint = document.getElementById('startHint');
+  if (pool.length > 0) {
+    btn.disabled = false;
+    const ord = document.getElementById('orderSelect')?.value || 'random';
+    hint.textContent = ord === 'random'
+      ? `將從 ${pool.length} 題中隨機抽取 ${Math.min(cnt, pool.length)} 題`
+      : `將按題號順序出 ${Math.min(cnt, pool.length)} 題（共 ${pool.length} 題）`;
+  } else {
+    btn.disabled = true;
+    hint.textContent = '目前條件下無可用題目';
+  }
+}
+document.getElementById('questionCount').oninput = updateStats;
+document.getElementById('orderSelect')?.addEventListener('change', updateStats);
+document.getElementById('examMinutes').oninput = () => {};
+
+// ── START ──
+function startExam() {
+  const yr = document.getElementById('yearSelect').value;
+  const sb = document.getElementById('subjectSelect').value;
+  const cnt = parseInt(document.getElementById('questionCount').value) || 50;
+  const mins = parseInt(document.getElementById('examMinutes').value) || 60;
+  const order = document.getElementById('orderSelect').value;
+  let pool = allQ.filter(q => (!yr || q.year === yr) && (!sb || q.subject === sb));
+  if (order === 'random') pool = pool.sort(() => Math.random() - 0.5);
+  examQ = pool.slice(0, Math.min(cnt, pool.length));
+  answers = new Array(examQ.length).fill(null);
+  marked = new Array(examQ.length).fill(false);
+  curIdx = 0; secLeft = mins * 60; startTime = Date.now(); elapsedMs = 0; lastResumeTime = null;
+
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('exam-screen').style.display = 'block';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('timerWrap').style.display = 'flex';
+  document.getElementById('headerMeta').style.display = 'block';
+
+  document.getElementById('examYear').textContent = yr || '全部';
+  document.getElementById('examSubject').textContent = sb || '全部';
+  document.getElementById('examTotal').textContent = examQ.length;
+
+  timerRunning = false;
+  buildGrid(); renderQ();
+  updateTimerDisplay();
+}
+
+let timerRunning = false;
+
+function toggleTimer() {
+  if (timerRunning) {
+    pauseTimer();
+  } else {
+    resumeTimer();
+  }
+}
+function resumeTimer() {
+  if (secLeft <= 0) return;
+  timerRunning = true;
+  lastResumeTime = Date.now();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    secLeft--;
+    updateTimerDisplay();
+    if (secLeft <= 0) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      document.getElementById('timeUpModal').classList.add('show');
+    }
+  }, 1000);
+  updateTimerDisplay();
+}
+function pauseTimer() {
+  if (timerRunning && lastResumeTime) elapsedMs += Date.now() - lastResumeTime;
+  timerRunning = false;
+  lastResumeTime = null;
+  clearInterval(timerInterval);
+  updateTimerDisplay();
+}
+function updateTimerDisplay() {
+  const m = Math.floor(Math.max(0, secLeft) / 60);
+  const s = Math.max(0, secLeft) % 60;
+  const el = document.getElementById('timerDisplay');
+  const hint = document.getElementById('timerHint');
+  const timeStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  if (!timerRunning) {
+    el.textContent = elapsedMs === 0 && secLeft > 0
+      ? '▶ 開始計時'
+      : `⏸ ${timeStr}`;
+    el.classList.remove('urgent');
+    el.classList.add('paused');
+    hint.textContent = secLeft > 0 ? '點擊繼續' : '時間已到';
+  } else {
+    el.textContent = timeStr;
+    el.classList.remove('paused');
+    el.classList.toggle('urgent', secLeft <= 300);
+    hint.textContent = '點擊暫停';
+  }
+}
+
+// ── GRID ──
+function buildGrid() {
+  const g = document.getElementById('navGrid');
+  g.innerHTML = '';
+  examQ.forEach((_, i) => {
+    const b = document.createElement('button');
+    b.className = 'nav-btn';
+    b.textContent = i + 1;
+    b.onclick = () => { curIdx = i; showAns = false; renderQ(); };
+    g.appendChild(b);
+  });
+}
+function updateGrid() {
+  document.querySelectorAll('.nav-btn').forEach((b, i) => {
+    b.className = 'nav-btn';
+    if (i === curIdx) b.classList.add('current');
+    else if (marked[i]) b.classList.add('marked');
+    else if (answers[i]) b.classList.add('answered');
+  });
+}
+
+// ── RENDER QUESTION ──
+function renderQ() {
+  const q = examQ[curIdx];
+  const scoreEach = (100 / examQ.length).toFixed(1);
+  document.getElementById('qNum').textContent = `第 ${curIdx + 1} 題`;
+  document.getElementById('qScore').textContent = `${scoreEach} 分`;
+  document.getElementById('qText').textContent = q.question;
+
+  // image
+  // 解析圖片欄位：支援 名稱|網址|名稱|網址 或單一網址
+  currentImgs = parseImgField(q.imageUrl || '');
+  const imgRow = document.getElementById('qImgRow');
+  if (currentImgs.length > 0) {
+    imgRow.style.display = 'block';
+    imgRow.innerHTML = currentImgs.map((img, i) =>
+      `<button class="btn-img" onclick="openImg(${i})">🖼 ${img.name}</button>`
+    ).join('');
+  } else {
+    imgRow.style.display = 'none';
+    imgRow.innerHTML = '';
+  }
+
+  // mark button
+  const mb = document.getElementById('markBtn');
+  mb.className = 'q-mark-btn' + (marked[curIdx] ? ' marked' : '');
+  mb.textContent = marked[curIdx] ? '★ 已標記' : '☆ 標記';
+  // answer box
+  const ab = document.getElementById('ansBtn');
+  const abox = document.getElementById('ansBox');
+  ab.className = 'q-ans-btn' + (showAns ? ' showing' : '');
+  ab.textContent = showAns ? '🙈 隱藏答案' : '💡 顯示答案';
+  if (showAns) {
+    const lt = q.answer;
+    abox.style.display = 'flex';
+    const detailHtml = q.detail
+      ? `<div class="q-ans-detail">
+           <div class="q-ans-detail-label">📖 詳細解析</div>
+           ${q.detail}
+         </div>`
+      : '';
+    abox.innerHTML = `
+      <div class="q-ans-answer">
+        <span class="ans-letter">${lt}</span>
+        <span>正確答案：${lt}．${q['option'+lt]}</span>
+      </div>
+      ${detailHtml}`;
+  } else {
+    abox.style.display = 'none';
+    abox.innerHTML = '';
+  }
+
+  // options
+  const ol = document.getElementById('optsList');
+  ol.innerHTML = '';
+  ['A','B','C','D'].forEach(lt => {
+    const sel = answers[curIdx] === lt;
+    const li = document.createElement('li');
+    li.className = 'opt-item' + (sel ? ' selected' : '');
+    li.innerHTML = `
+      <label class="opt-lbl">
+        <input type="radio" name="opt" value="${lt}" ${sel?'checked':''}>
+        <span class="opt-circle">${lt}</span>
+        <span class="opt-text">${q['option'+lt]}</span>
+      </label>`;
+    li.addEventListener('click', () => { answers[curIdx] = lt; renderQ(); });
+    ol.appendChild(li);
+  });
+
+  document.getElementById('prevBtn').disabled = curIdx === 0;
+  document.getElementById('nextBtn').textContent = curIdx === examQ.length - 1 ? '✓ 完成' : '下一題 ▶';
+  updateGrid(); updateProgress();
+}
+
+function updateProgress() {
+  const done = answers.filter(a => a !== null).length;
+  const pct = (done / examQ.length * 100).toFixed(0);
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progLbl').textContent = `已作答 ${done} / ${examQ.length} 題`;
+}
+
+function prevQ() { if (curIdx > 0) { curIdx--; showAns = false; renderQ(); } }
+function nextQ() {
+  if (curIdx < examQ.length - 1) { curIdx++; showAns = false; renderQ(); }
+  else confirmEnd();
+}
+function toggleMark() { marked[curIdx] = !marked[curIdx]; renderQ(); }
+function toggleAnswer() { showAns = !showAns; renderQ(); }
+
+// ── IMAGE ──
+// 解析圖片欄位格式：「名稱|網址|名稱|網址」或單一網址
+function parseImgField(raw) {
+  if (!raw) return [];
+  const parts = raw.split('|').map(s => s.trim()).filter(Boolean);
+  const imgs = [];
+  // 如果是 名稱|網址|名稱|網址 格式
+  if (parts.length >= 2 && !parts[0].startsWith('http')) {
+    for (let i = 0; i < parts.length - 1; i += 2) {
+      const name = parts[i];
+      const url  = toDirectImgUrl(parts[i + 1]);
+      if (url) imgs.push({ name, url });
+    }
+  } else {
+    // 單一或多個純網址（用 | 分隔）
+    parts.forEach((p, i) => {
+      const url = toDirectImgUrl(p);
+      if (url) imgs.push({ name: `圖片 ${i + 1}`, url });
+    });
+  }
+  return imgs;
+}
+
+function openImg(idx) {
+  idx = idx || 0;
+  if (!currentImgs.length) return;
+  const modal = document.getElementById('imgModal');
+  const tabs  = document.getElementById('modalTabs');
+  // 建立 tab 列（多張才顯示）
+  if (currentImgs.length > 1) {
+    tabs.style.display = 'flex';
+    tabs.innerHTML = currentImgs.map((img, i) =>
+      `<button class="img-tab ${i === idx ? 'active' : ''}" onclick="switchImg(${i})">${img.name}</button>`
+    ).join('');
+  } else {
+    tabs.style.display = 'none';
+  }
+  document.getElementById('modalTitle').textContent = currentImgs[idx].name;
+  document.getElementById('modalImg').src = currentImgs[idx].url;
+  modal.classList.add('show');
+  modal.dataset.idx = idx;
+}
+
+function switchImg(idx) {
+  if (!currentImgs[idx]) return;
+  document.getElementById('modalImg').src = currentImgs[idx].url;
+  document.getElementById('modalTitle').textContent = currentImgs[idx].name;
+  document.querySelectorAll('.img-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  document.getElementById('imgModal').dataset.idx = idx;
+}
+
+function closeImg() {
+  document.getElementById('imgModal').classList.remove('show');
+  document.getElementById('modalImg').src = '';
+}
+document.getElementById('imgModal').addEventListener('click', function(e) {
+  if (e.target === this) closeImg();
+});
+
+// ── END ──
+function confirmEnd() {
+  const unanswered = answers.filter(a => a === null).length;
+  document.getElementById('endModalBody').textContent =
+    unanswered > 0 ? `尚有 ${unanswered} 題未作答，確定要交卷嗎？` : '所有題目已作答完畢，確定要交卷嗎？';
+  document.getElementById('endModal').classList.add('show');
+}
+function closeEndModal() { document.getElementById('endModal').classList.remove('show'); }
+function endExam() {
+  clearInterval(timerInterval);
+  document.getElementById('endModal').classList.remove('show');
+  document.getElementById('timeUpModal').classList.remove('show');
+  showResult();
+}
+
+// ── RESULT ──
+function showResult() {
+  document.getElementById('exam-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+  document.getElementById('timerWrap').style.display = 'none';
+
+  let correct = 0, wrong = 0, skip = 0;
+  examQ.forEach((q, i) => {
+    if (!answers[i]) skip++;
+    else if (answers[i] === q.answer) correct++;
+    else wrong++;
+  });
+
+  const scorePerQ = 100 / examQ.length;
+  const total = (correct * scorePerQ).toFixed(1);
+  const passed = parseFloat(total) >= 60;
+  if (timerRunning && lastResumeTime) elapsedMs += Date.now() - lastResumeTime;
+  const elapsed = Math.floor(elapsedMs / 1000);
+  const em = Math.floor(elapsed / 60), es = elapsed % 60;
+
+  // save to history
+  const yr  = document.getElementById('examYear').textContent;
+  const sb  = document.getElementById('examSubject').textContent;
+  recordExamResult(yr, sb, examQ.length, correct, wrong, skip, total, passed, elapsed);
+
+  document.getElementById('rScore').innerHTML = `${total}<span>分</span>`;
+  const passEl = document.getElementById('rPass');
+  passEl.textContent = passed ? '🎉 恭喜通過！' : '❌ 未達錄取標準（60分）';
+  passEl.className = 'result-pass ' + (passed ? 'pass' : 'fail');
+  document.getElementById('rCorrect').textContent = correct;
+  document.getElementById('rWrong').textContent = wrong;
+  document.getElementById('rSkip').textContent = skip;
+  document.getElementById('rTime').textContent = `${String(em).padStart(2,'0')}:${String(es).padStart(2,'0')}`;
+
+  const tbody = document.getElementById('reviewBody');
+  tbody.innerHTML = '';
+  examQ.forEach((q, i) => {
+    const ua = answers[i];
+    let badge;
+    if (!ua) badge = '<span class="badge sk">未作答</span>';
+    else if (ua === q.answer) badge = '<span class="badge ok">正確</span>';
+    else badge = '<span class="badge ng">錯誤</span>';
+
+    const hasImg = q.imageUrl ? `<br><a href="${q.imageUrl}" target="_blank" style="font-size:0.72rem;color:var(--sky);">🖼 查看圖片</a>` : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${i+1}</strong></td>
+      <td style="max-width:280px;">${q.question}${hasImg}</td>
+      <td>${ua ? `${ua}. ${q['option'+ua]}` : '—'}</td>
+      <td><strong>${q.answer}. ${q['option'+q.answer]}</strong></td>
+      <td>${badge}</td>
+      <td style="color:var(--text2);max-width:200px;font-size:0.76rem;line-height:1.6;">
+        ${q.explanation || ''}
+        ${q.detail ? `<div style="margin-top:4px;padding-top:4px;border-top:1px solid #e0d8c0;white-space:pre-wrap;">${q.detail}</div>` : ''}
+        ${!q.explanation && !q.detail ? '—' : ''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function retake() { document.getElementById('result-screen').style.display = 'none'; startExam(); }
+function backSetup() {
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'block';
+  document.getElementById('timerWrap').style.display = 'none';
+  document.getElementById('headerMeta').style.display = 'none';
+  renderHistory();
+}
+
+// ── HISTORY ──
+const HIST_KEY = 'optom_exam_history';
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveHistory(records) {
+  localStorage.setItem(HIST_KEY, JSON.stringify(records));
+}
+
+function addHistoryRecord(rec) {
+  const records = loadHistory();
+  records.unshift(rec); // newest first
+  if (records.length > 200) records.pop(); // cap at 200
+  saveHistory(records);
+}
+
+// called from showResult()
+function recordExamResult(year, subject, totalQ, correct, wrong, skip, score, passed, elapsedSec) {
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  addHistoryRecord({ date: dateStr, time: timeStr, year, subject, totalQ, correct, wrong, skip, score: parseFloat(score), passed, elapsedSec });
+}
+
+// sort state
+let histSort = { col: 'date', dir: 'desc' };
+let histFilter = { year: '', subject: '' };
+
+function renderHistory() {
+  const all = loadHistory();
+  const container = document.getElementById('histBody');
+
+  if (!all.length) {
+    container.innerHTML = '<div class="hist-empty">尚無考試紀錄<br>完成第一次考試後將自動儲存於此</div>';
+    return;
+  }
+
+  // build filter options
+  const years    = [...new Set(all.map(r => r.year || '全部'))].sort();
+  const subjects = [...new Set(all.map(r => r.subject || '全部'))].sort();
+
+  // apply filters
+  let filtered = all.filter(r =>
+    (!histFilter.year    || r.year    === histFilter.year) &&
+    (!histFilter.subject || r.subject === histFilter.subject)
+  );
+
+  // apply sort
+  filtered = filtered.sort((a, b) => {
+    let av = a[histSort.col], bv = b[histSort.col];
+    if (histSort.col === 'date') { av = a.date + a.time; bv = b.date + b.time; }
+    if (typeof av === 'string') return histSort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return histSort.dir === 'asc' ? av - bv : bv - av;
+  });
+
+  // summary stats (from filtered)
+  const avg = filtered.length ? (filtered.reduce((s,r) => s + r.score, 0) / filtered.length).toFixed(1) : '—';
+  const best = filtered.length ? Math.max(...filtered.map(r => r.score)).toFixed(1) : '—';
+  const passRate = filtered.length ? Math.round(filtered.filter(r => r.passed).length / filtered.length * 100) : '—';
+
+  function sortTh(col, label) {
+    const cls = histSort.col === col ? histSort.dir : '';
+    return `<th class="${cls}" onclick="setHistSort('${col}')">${label}<span class="sort-ico"></span></th>`;
+  }
+
+  container.innerHTML = `
+    <div class="hist-summary">
+      <div class="hist-sum-card"><div class="hist-sum-val">${filtered.length}</div><div class="hist-sum-lbl">考試次數</div></div>
+      <div class="hist-sum-card"><div class="hist-sum-val">${avg}</div><div class="hist-sum-lbl">平均分數</div></div>
+      <div class="hist-sum-card"><div class="hist-sum-val">${best}</div><div class="hist-sum-lbl">最高分數</div></div>
+      <div class="hist-sum-card"><div class="hist-sum-val">${passRate}%</div><div class="hist-sum-lbl">通過率</div></div>
+    </div>
+    <div class="hist-filter-row">
+      <select id="hfYear"   onchange="setHistFilter('year',this.value)">
+        <option value="">全部年度</option>
+        ${years.map(y => `<option ${histFilter.year===y?'selected':''}>${y}</option>`).join('')}
+      </select>
+      <select id="hfSubject" onchange="setHistFilter('subject',this.value)">
+        <option value="">全部科別</option>
+        ${subjects.map(s => `<option ${histFilter.subject===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <span class="hist-count">共 ${filtered.length} 筆</span>
+    </div>
+    <div style="overflow:auto;">
+    <table class="hist-table">
+      <thead><tr>
+        ${sortTh('date','日期時間')}
+        ${sortTh('year','年度')}
+        ${sortTh('subject','科別')}
+        ${sortTh('totalQ','題數')}
+        ${sortTh('correct','答對')}
+        ${sortTh('score','分數')}
+        <th>用時</th>
+        <th>結果</th>
+      </tr></thead>
+      <tbody>
+        ${filtered.map(r => {
+          const pct = Math.min(100, r.score);
+          const fail = !r.passed;
+          const em = Math.floor((r.elapsedSec||0)/60), es = (r.elapsedSec||0)%60;
+          return `<tr>
+            <td style="white-space:nowrap;color:var(--text3);font-size:0.76rem;">${r.date}<br>${r.time}</td>
+            <td>${r.year||'—'}</td>
+            <td style="white-space:nowrap;">${r.subject||'—'}</td>
+            <td style="text-align:center;">${r.totalQ||'—'}</td>
+            <td style="text-align:center;">${r.correct??'—'}</td>
+            <td>
+              <div class="hist-score-bar">
+                <div class="hist-score-track">
+                  <div class="hist-score-fill ${fail?'fail':''}" style="width:${pct}%;"></div>
+                </div>
+                <span class="hist-score-num ${fail?'hist-fail':'hist-pass'}">${r.score}</span>
+              </div>
+            </td>
+            <td style="white-space:nowrap;color:var(--text3);">${String(em).padStart(2,'0')}:${String(es).padStart(2,'0')}</td>
+            <td>${r.passed ? '<span class="hist-pass">✓ 通過</span>' : '<span class="hist-fail">✗ 未通過</span>'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    </div>`;
+}
+
+function setHistSort(col) {
+  if (histSort.col === col) histSort.dir = histSort.dir === 'asc' ? 'desc' : 'asc';
+  else { histSort.col = col; histSort.dir = 'desc'; }
+  renderHistory();
+}
+function setHistFilter(key, val) {
+  histFilter[key] = val;
+  renderHistory();
+}
+function clearHistory() {
+  if (!confirm('確定要清除所有歷史成績紀錄嗎？此操作無法復原。')) return;
+  localStorage.removeItem(HIST_KEY);
+  renderHistory();
+}
+
+// init history on load
+renderHistory();
+// ── PWA Service Worker ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
