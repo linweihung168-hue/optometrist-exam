@@ -820,17 +820,17 @@ let currentImgs = []; // [{name, url}]
 // ── GOOGLE SHEETS 載入 ──
 const SHEET_ID = "1W8Y4dwrgcWT2IYdvBOJQJOPskzZblyuH";
 
-async function loadFromSheets() {
+function loadFromSheets() {
   setLoadStatus('⏳', '正在從雲端載入題庫...', '請稍候');
   document.getElementById('startBtn').disabled = true;
-  try {
-    // 使用 gviz JSON API（支援 CORS）
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&t=${Date.now()}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('網路錯誤');
-    const text = await res.text();
-    // gviz 回傳格式：/*O_o*/\ngoogle.visualization.Query.setResponse({...});
-    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?$/, ''));
+
+  // 移除舊的 script tag
+  const oldScript = document.getElementById('gviz-script');
+  if (oldScript) oldScript.remove();
+
+  // 用 JSONP 方式讀取（完全繞過 CORS）
+  window._sheetsCallback = function(json) {
+    try {
     const table = json.table;
     const headers = table.cols.map(c => (c.label || c.id || '').trim());
 
@@ -877,7 +877,6 @@ async function loadFromSheets() {
         valid.push(q);
       }
     }
-    const csv = ''; // dummy, not used below
     const rows = parseCSV(csv);
     if (rows.length < 2) throw new Error('題庫是空的');
 
@@ -930,15 +929,22 @@ async function loadFromSheets() {
     if (!valid.length) throw new Error('沒有找到有效題目');
     allQ = valid;
     const imgCount = valid.filter(q => q.imageUrl).length;
-    setLoadStatus('✅', `題庫載入成功！共 ${valid.length} 題`,
-      imgCount > 0 ? `其中 ${imgCount} 題含圖片` : '可以開始考試了');
+    setLoadStatus('✅', `題庫載入成功！共${valid.length}題`,
+      imgCount > 0 ? `其中${imgCount}題含圖片` : '可以開始考試了');
     populateFilters();
     updateStats();
+    } catch(err) {
+      setLoadStatus('❌', '題庫載入失敗', err.message + ' — 請點重新載入');
+      document.getElementById('startBtn').disabled = true;
+    }
+  };
 
-  } catch(err) {
-    setLoadStatus('❌', '題庫載入失敗', `${err.message} — 請點右側重新載入`);
-    document.getElementById('startBtn').disabled = true;
-  }
+  // 動態插入 script tag
+  const script = document.createElement('script');
+  script.id = 'gviz-script';
+  script.src = `https://docs.google.com/spreadsheets/d/1W8Y4dwrgcWT2IYdvBOJQJOPskzZblyuH/gviz/tq?tqx=out:json&callback=_sheetsCallback&t=${Date.now()}`;
+  script.onerror = () => setLoadStatus('❌', '題庫載入失敗', '網路錯誤 — 請點重新載入');
+  document.head.appendChild(script);
 }
 
 function setLoadStatus(icon, text, sub) {
