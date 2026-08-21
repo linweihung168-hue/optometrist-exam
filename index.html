@@ -820,47 +820,64 @@ let currentImgs = []; // [{name, url}]
 // ── GOOGLE SHEETS 載入 ──
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8McKWY-oNUy7dkDe24C-eGkkb4NKaF6YxPnXsOnaBQWj7NO-im2sCLrlM7Dnwn9EC/exec";
 
+function processData(data) {
+  if (!Array.isArray(data) || data.length === 0) throw new Error('題庫是空的');
+  const valid = [];
+  for (const r of data) {
+    const q = {
+      year:        String(r.year        || r['年度']    || '').trim(),
+      subject:     String(r.subject     || r['科別']    || '').trim(),
+      question:    String(r.question    || r['題目']    || '').trim(),
+      optionA:     String(r.optionA     || r['選項A']   || '').trim(),
+      optionB:     String(r.optionB     || r['選項B']   || '').trim(),
+      optionC:     String(r.optionC     || r['選項C']   || '').trim(),
+      optionD:     String(r.optionD     || r['選項D']   || '').trim(),
+      answer:      String(r.answer      || r['正確答案'] || '').trim().toUpperCase(),
+      explanation: String(r.explanation || r['解析']    || '').trim(),
+      detail:      String(r.detail      || r['詳解']    || '').trim(),
+      imageUrl:    toDirectImgUrl(String(r.imageUrl || r['圖片連結'] || '').trim()),
+    };
+    if (q.year && q.subject && q.question &&
+        q.optionA && q.optionB && q.optionC && q.optionD &&
+        'ABCD'.includes(q.answer) && q.answer.length === 1) {
+      valid.push(q);
+    }
+  }
+  if (!valid.length) throw new Error('沒有找到有效題目');
+  allQ = valid;
+  const imgCount = valid.filter(q => q.imageUrl).length;
+  setLoadStatus('✅', `題庫載入成功！共${valid.length}題`,
+    imgCount > 0 ? `其中${imgCount}題含圖片` : '可以開始考試了');
+  populateFilters();
+  updateStats();
+}
+
+// JSONP callback
+window._cb = function(data) {
+  try { processData(data); }
+  catch(err) {
+    setLoadStatus('❌', '題庫載入失敗', err.message + ' — 請點重新載入');
+    document.getElementById('startBtn').disabled = true;
+  }
+};
+
 function loadFromSheets() {
   setLoadStatus('⏳', '正在從雲端載入題庫...', '請稍候');
   document.getElementById('startBtn').disabled = true;
 
-  fetch(APPS_SCRIPT_URL)
-    .then(r => r.json())
-    .then(data => {
-      if (!Array.isArray(data) || data.length === 0) throw new Error('題庫是空的');
-      const valid = [];
-      for (const r of data) {
-        const q = {
-          year:        String(r.year        || r['年度']   || '').trim(),
-          subject:     String(r.subject     || r['科別']   || '').trim(),
-          question:    String(r.question    || r['題目']   || '').trim(),
-          optionA:     String(r.optionA     || r['選項A']  || '').trim(),
-          optionB:     String(r.optionB     || r['選項B']  || '').trim(),
-          optionC:     String(r.optionC     || r['選項C']  || '').trim(),
-          optionD:     String(r.optionD     || r['選項D']  || '').trim(),
-          answer:      String(r.answer      || r['正確答案']|| '').trim().toUpperCase(),
-          explanation: String(r.explanation || r['解析']   || '').trim(),
-          detail:      String(r.detail      || r['詳解']   || '').trim(),
-          imageUrl:    toDirectImgUrl(String(r.imageUrl || r['圖片連結'] || '').trim()),
-        };
-        if (q.year && q.subject && q.question &&
-            q.optionA && q.optionB && q.optionC && q.optionD &&
-            'ABCD'.includes(q.answer) && q.answer.length === 1) {
-          valid.push(q);
-        }
-      }
-      if (!valid.length) throw new Error('沒有找到有效題目');
-      allQ = valid;
-      const imgCount = valid.filter(q => q.imageUrl).length;
-      setLoadStatus('✅', `題庫載入成功！共${valid.length}題`,
-        imgCount > 0 ? `其中${imgCount}題含圖片` : '可以開始考試了');
-      populateFilters();
-      updateStats();
-    })
-    .catch(err => {
-      setLoadStatus('❌', '題庫載入失敗', err.message + ' — 請點重新載入');
-      document.getElementById('startBtn').disabled = true;
-    });
+  // 移除舊 script
+  const old = document.getElementById('as-script');
+  if (old) old.remove();
+
+  // JSONP 方式呼叫 Apps Script
+  const s = document.createElement('script');
+  s.id = 'as-script';
+  s.onerror = () => {
+    setLoadStatus('❌', '題庫載入失敗', '網路錯誤 — 請點重新載入');
+    document.getElementById('startBtn').disabled = true;
+  };
+  s.src = APPS_SCRIPT_URL + '?callback=_cb&t=' + Date.now();
+  document.head.appendChild(s);
 }
 
 function setLoadStatus(icon, text, sub) {
