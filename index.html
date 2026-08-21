@@ -123,25 +123,43 @@ body {
 
 .home-fab {
   position: fixed;
-  bottom: 28px;
-  right: 20px;
+  bottom: 40px;
+  right: 16px;
   z-index: 500;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--sage);
-  color: white;
+  background: rgba(80,120,180,0.25);
+  color: rgba(255,255,255,0.85);
   border: none;
-  font-size: 1.3rem;
+  font-size: 0;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(58,122,191,0.4);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   display: none;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
-.home-fab:hover { background: var(--sage2); transform: scale(1.1); }
-.home-fab:active { transform: scale(0.95); }
+.home-fab::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.75);
+  display: block;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  transition: all 0.3s;
+}
+.home-fab:hover {
+  background: rgba(58,122,191,0.5);
+}
+.home-fab:hover::after {
+  background: white;
+  transform: scale(1.1);
+}
+.home-fab:active { transform: scale(0.9); }
 
 .header-meta { font-size: 0.78rem; opacity: 0.8; text-align: right; display: none; line-height: 1.5; }
 
@@ -796,7 +814,7 @@ body {
 </div>
 
 <!-- 回首頁浮動按鈕 -->
-<button class="home-fab" id="homeFab" onclick="goHome()" title="回到首頁">🏠</button>
+<button class="home-fab" id="homeFab" onclick="goHome()" title="回到首頁"></button>
 
 <!-- Confirm End Modal -->
 <div class="modal-overlay" id="endModal">
