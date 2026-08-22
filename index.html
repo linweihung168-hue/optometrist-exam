@@ -971,7 +971,6 @@ function populateFilters() {
   sSel.innerHTML = '<option value="">── 全部科別 ──</option>' + subjects.map(s => `<option>${s}</option>`).join('');
   document.getElementById('statsRow').style.display = 'flex';
   document.getElementById('stYears').textContent = years.length;
-  document.getElementById('stSubjects').textContent = subjects.length;
   ySel.onchange = sSel.onchange = updateStats;
 }
 
