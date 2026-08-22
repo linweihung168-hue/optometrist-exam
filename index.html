@@ -129,37 +129,39 @@ body {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(80,120,180,0.25);
-  color: rgba(255,255,255,0.85);
+  background: rgba(80,120,180,0.28);
   border: none;
-  font-size: 0;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: grab;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
   display: none;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  transition: background 0.3s, opacity 0.3s;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .home-fab::after {
   content: '';
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.78);
   display: block;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-  transition: all 0.3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  pointer-events: none;
+  transition: transform 0.2s, background 0.2s;
 }
-.home-fab:hover {
-  background: rgba(58,122,191,0.5);
+.home-fab:hover { background: rgba(58,122,191,0.45); }
+.home-fab:hover::after { background: white; transform: scale(1.12); }
+.home-fab:active { cursor: grabbing; }
+.home-fab.hidden-fab {
+  opacity: 0.15;
+  background: rgba(120,120,120,0.2);
 }
-.home-fab:hover::after {
-  background: white;
-  transform: scale(1.1);
-}
-.home-fab:active { transform: scale(0.9); }
+.home-fab.hidden-fab::after { background: rgba(255,255,255,0.4); }
 
 .header-meta { font-size: 0.78rem; opacity: 0.8; text-align: right; display: none; line-height: 1.5; }
 
@@ -814,7 +816,7 @@ body {
 </div>
 
 <!-- 回首頁浮動按鈕 -->
-<button class="home-fab" id="homeFab" onclick="goHome()" title="回到首頁"></button>
+<button class="home-fab" id="homeFab" title="長按隱藏，拖曳移動，點擊回首頁"></button>
 
 <!-- Confirm End Modal -->
 <div class="modal-overlay" id="endModal">
@@ -1489,6 +1491,94 @@ function clearHistory() {
 
 // init history on load
 renderHistory();
+// ── FLOATING BUTTON (拖曳 + 隱藏) ──
+(function() {
+  const fab = document.getElementById('homeFab');
+  if (!fab) return;
+
+  let isDragging = false;
+  let hasMoved = false;
+  let startX, startY, origX, origY;
+  let longPressTimer = null;
+  let isHidden = false;
+
+  // 恢復上次位置
+  try {
+    const pos = JSON.parse(localStorage.getItem('fab_pos') || 'null');
+    if (pos) { fab.style.right = 'auto'; fab.style.left = pos.x + 'px'; fab.style.top = pos.y + 'px'; fab.style.bottom = 'auto'; }
+    isHidden = localStorage.getItem('fab_hidden') === '1';
+    if (isHidden) fab.classList.add('hidden-fab');
+  } catch(e) {}
+
+  function getPos(e) {
+    return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                     : { x: e.clientX, y: e.clientY };
+  }
+
+  function onStart(e) {
+    const pos = getPos(e);
+    startX = pos.x; startY = pos.y;
+    const rect = fab.getBoundingClientRect();
+    origX = rect.left; origY = rect.top;
+    isDragging = true; hasMoved = false;
+
+    // 長按 600ms 切換隱藏
+    longPressTimer = setTimeout(() => {
+      if (!hasMoved) {
+        isHidden = !isHidden;
+        fab.classList.toggle('hidden-fab', isHidden);
+        try { localStorage.setItem('fab_hidden', isHidden ? '1' : '0'); } catch(e) {}
+        isDragging = false;
+      }
+    }, 600);
+
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!isDragging) return;
+    const pos = getPos(e);
+    const dx = pos.x - startX, dy = pos.y - startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      hasMoved = true;
+      clearTimeout(longPressTimer);
+    }
+    if (hasMoved) {
+      let nx = origX + dx, ny = origY + dy;
+      const W = window.innerWidth, H = window.innerHeight;
+      nx = Math.max(0, Math.min(W - 44, nx));
+      ny = Math.max(0, Math.min(H - 44, ny));
+      fab.style.right = 'auto'; fab.style.bottom = 'auto';
+      fab.style.left = nx + 'px'; fab.style.top = ny + 'px';
+    }
+    e.preventDefault();
+  }
+
+  function onEnd(e) {
+    clearTimeout(longPressTimer);
+    if (!hasMoved && !isHidden) {
+      // 點擊：回首頁
+      goHome();
+    }
+    if (hasMoved) {
+      // 吸附到左右邊緣
+      const rect = fab.getBoundingClientRect();
+      const W = window.innerWidth;
+      const nx = rect.left + 22 < W / 2 ? 8 : W - 52;
+      fab.style.left = nx + 'px';
+      try { localStorage.setItem('fab_pos', JSON.stringify({ x: nx, y: rect.top })); } catch(e) {}
+    }
+    isDragging = false;
+  }
+
+  fab.addEventListener('mousedown', onStart);
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onEnd);
+  fab.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend', onEnd);
+})();
+
 // ── PWA Service Worker ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
