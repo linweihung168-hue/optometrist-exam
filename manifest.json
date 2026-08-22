@@ -1,7 +1,7 @@
 {
-  "name": "驗光師考試模擬系統",
-  "short_name": "驗光師考試",
-  "description": "驗光師國家考試模擬測驗系統",
+  "name": "國考模擬測驗",
+  "short_name": "國考模擬測驗",
+  "description": "國家考試模擬測驗系統",
   "start_url": "/optometrist-exam/",
   "scope": "/optometrist-exam/",
   "display": "standalone",

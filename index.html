@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#3a7abf">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>驗光師考試模擬系統</title>
+<title>國考模擬測驗</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;600&display=swap');
 
@@ -274,6 +274,8 @@ body {
 .stat-lbl { font-size: 0.68rem; color: var(--text3); margin-top: 1px; }
 
 /* format table */
+.fmt-arrow { display:inline-block; transition:transform 0.2s; font-size:0.65rem; }
+.fmt-arrow.open { transform: rotate(90deg); }
 .fmt-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-top: 10px; }
 .fmt-table th { background: var(--dusty); color: white; padding: 6px 10px; text-align: left; font-weight: 600; }
 .fmt-table td { padding: 5px 10px; border-bottom: 1px solid var(--border2); color: var(--text2); }
@@ -615,8 +617,7 @@ body {
 
 <header class="site-header">
   <div class="header-title">
-    驗光師考試模擬系統
-    <small>OPTOMETRY EXAM SIMULATOR</small>
+    國考模擬測驗
   </div>
   <div class="timer-wrap" id="timerWrap">
     <div class="timer-display" id="timerDisplay" onclick="toggleTimer()" title="點擊開始／暫停計時">▶ 開始計時</div>
@@ -648,11 +649,11 @@ body {
           </div>
           <div class="form-group">
             <label>考試題數</label>
-            <input type="number" id="questionCount" value="50" min="1" max="50">
+            <input type="number" id="questionCount" value="50" min="50" max="50" readonly style="pointer-events:none;">
           </div>
           <div class="form-group">
             <label>時間（分鐘）</label>
-            <input type="number" id="examMinutes" value="60" min="5" max="180">
+            <input type="number" id="examMinutes" value="60" min="60" max="60" readonly style="pointer-events:none;">
           </div>
           <div class="form-group">
             <label>出題順序</label>
@@ -1599,6 +1600,13 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
+}
+function toggleFmt(btn) {
+  const box = btn.parentElement.querySelector('.fmt-box');
+  const arrow = btn.querySelector('.fmt-arrow');
+  const isOpen = box.style.display !== 'none';
+  box.style.display = isOpen ? 'none' : 'block';
+  arrow.classList.toggle('open', !isOpen);
 }
 </script>
 </body>
