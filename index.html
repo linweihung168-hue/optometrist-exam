@@ -1533,6 +1533,7 @@ renderHistory();
     }, 600);
 
     e.preventDefault();
+    e.stopPropagation();
   }
 
   function onMove(e) {
@@ -1554,14 +1555,26 @@ renderHistory();
     e.preventDefault();
   }
 
-  function onEnd(e) {
+  function onFabEnd(e) {
     clearTimeout(longPressTimer);
-    if (!hasMoved && !isHidden) {
-      // 點擊：回首頁
-      goHome();
+    if (isDragging) {
+      if (!hasMoved && !isHidden) goHome();
+      if (hasMoved) {
+        const rect = fab.getBoundingClientRect();
+        const W = window.innerWidth;
+        const nx = rect.left + 22 < W / 2 ? 8 : W - 52;
+        fab.style.left = nx + 'px';
+        try { localStorage.setItem('fab_pos', JSON.stringify({ x: nx, y: rect.top })); } catch(e) {}
+      }
+      isDragging = false;
     }
+    e.stopPropagation();
+  }
+
+  function onDocEnd(e) {
+    if (!isDragging) return;
+    clearTimeout(longPressTimer);
     if (hasMoved) {
-      // 吸附到左右邊緣
       const rect = fab.getBoundingClientRect();
       const W = window.innerWidth;
       const nx = rect.left + 22 < W / 2 ? 8 : W - 52;
@@ -1572,11 +1585,13 @@ renderHistory();
   }
 
   fab.addEventListener('mousedown', onStart);
+  fab.addEventListener('mouseup', onFabEnd);
   document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('mouseup', onDocEnd);
   fab.addEventListener('touchstart', onStart, { passive: false });
+  fab.addEventListener('touchend', onFabEnd, { passive: false });
   document.addEventListener('touchmove', onMove, { passive: false });
-  document.addEventListener('touchend', onEnd);
+  document.addEventListener('touchend', onDocEnd, { passive: false });
 })();
 
 // ── PWA Service Worker ──
