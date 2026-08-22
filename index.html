@@ -120,6 +120,9 @@ body {
   letter-spacing: 0.04em;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.65} }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+input[type=number] { -moz-appearance:textfield; }
 
 .home-fab {
   position: fixed;
@@ -635,7 +638,7 @@ body {
     <div class="card">
       <div class="card-head">
         <h2>⚙️ 考試設定</h2>
-        <span class="tag">STEP 1</span>
+        
       </div>
       <div class="card-body">
         <div class="settings-row">
@@ -662,12 +665,16 @@ body {
               <option value="random">🔀 隨機出題</option>
             </select>
           </div>
+          <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end;">
+            <label style="opacity:0;">開始</label>
+            <button class="btn btn-primary" id="startBtn" disabled onclick="startExam()" style="width:100%;">▶ 開始考試</button>
+            <p class="start-hint" id="startHint" style="font-size:0.7rem;color:var(--text3);margin:4px 0 0;text-align:center;"></p>
+          </div>
         </div>
-        <div class="stats-row" id="statsRow" style="display:none;">
+        <div class="stats-row" id="statsRow" style="padding:8px 12px;gap:6px;" style="display:none;">
           <div class="stat"><div class="stat-val" id="stTotal">0</div><div class="stat-lbl">題庫總題數</div></div>
           <div class="stat"><div class="stat-val" id="stFiltered">0</div><div class="stat-lbl">符合條件</div></div>
           <div class="stat"><div class="stat-val" id="stYears">0</div><div class="stat-lbl">年度數</div></div>
-          <div class="stat"><div class="stat-val" id="stSubjects">0</div><div class="stat-lbl">科別數</div></div>
         </div>
       </div>
     </div>
@@ -675,27 +682,23 @@ body {
     <!-- 歷史成績 -->
     <div class="card" id="histCard">
       <div class="card-head" style="justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <h2>📊 歷史成績紀錄</h2>
+        <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHist()">
+          <span id="histArrow" style="font-size:0.65rem;transition:transform 0.2s;display:inline-block;">▶</span>
+          <h2>📊 歷史成績</h2>
         </div>
-        <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.76rem;" onclick="clearHistory()">🗑 清除紀錄</button>
+        <button class="btn btn-secondary" style="padding:4px 12px;font-size:0.76rem;" onclick="clearHistory()">🗑 清除</button>
       </div>
+      <div id="histBodyWrap" style="display:none;">
       <div class="card-body" id="histBody">
         <div class="hist-empty">尚無考試紀錄<br>完成第一次考試後將自動儲存於此</div>
+      </div>
       </div>
     </div>
 
     <!-- 題庫狀態 -->
     <div class="card">
-      <div class="card-head" style="justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <h2>📚 題庫狀態</h2>
-          <span class="tag">STEP 2</span>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-          <button class="btn btn-primary" id="startBtn" disabled onclick="startExam()">▶ 開始考試</button>
-          <p class="start-hint" id="startHint" style="font-size:0.72rem;color:var(--text3);margin:0;">題庫載入中...</p>
-        </div>
+      <div class="card-head">
+        <h2>📚 題庫狀態</h2>
       </div>
       <div class="card-body">
         <div id="loadStatus" style="display:flex;align-items:center;gap:12px;padding:16px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
@@ -1600,6 +1603,13 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
+}
+function toggleHist() {
+  const wrap = document.getElementById('histBodyWrap');
+  const arrow = document.getElementById('histArrow');
+  const isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : 'block';
+  arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
 function toggleFmt(btn) {
   const box = btn.parentElement.querySelector('.fmt-box');
