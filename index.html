@@ -121,8 +121,8 @@ body {
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.65} }
 input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
-input[type=number] { -moz-appearance:textfield; }
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none !important; margin:0 !important; display:none !important; }
+input[type=number] { -moz-appearance:textfield !important; appearance:textfield !important; }
 
 .home-fab {
   position: fixed;
@@ -636,10 +636,6 @@ input[type=number] { -moz-appearance:textfield; }
 
     <!-- 考試設定（最上方） -->
     <div class="card">
-      <div class="card-head">
-        <h2>⚙️ 考試設定</h2>
-        
-      </div>
       <div class="card-body">
         <div class="settings-row">
           <div class="form-group">
@@ -697,9 +693,7 @@ input[type=number] { -moz-appearance:textfield; }
 
     <!-- 題庫狀態 -->
     <div class="card">
-      <div class="card-head">
-        <h2>📚 題庫狀態</h2>
-      </div>
+
       <div class="card-body">
         <div id="loadStatus" style="display:flex;align-items:center;gap:12px;padding:16px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);">
           <div id="loadIcon" style="font-size:1.8rem;">⏳</div>
